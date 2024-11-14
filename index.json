@@ -59,6 +59,227 @@
                     "sudo zypper install -y php php-mysql"
                 ]
             }
+        },
+        {
+            "name": "Nginx",
+            "version": "latest",
+            "description": "Web Server - Nginx",
+            "install_commands": {
+                "macos": [
+                    "brew install nginx"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y nginx"
+                ],
+                "fedora": [
+                    "sudo dnf install -y nginx"
+                ],
+                "suse": [
+                    "sudo zypper install -y nginx"
+                ]
+            }
+        },
+        {
+            "name": "PostgreSQL",
+            "version": "latest",
+            "description": "Advanced Open Source Database",
+            "install_commands": {
+                "macos": [
+                    "brew install postgresql"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y postgresql postgresql-contrib"
+                ],
+                "fedora": [
+                    "sudo dnf install -y postgresql-server postgresql-contrib"
+                ],
+                "suse": [
+                    "sudo zypper install -y postgresql"
+                ]
+            }
+        },
+        {
+            "name": "Node.js",
+            "version": "latest",
+            "description": "JavaScript Runtime",
+            "install_commands": {
+                "macos": [
+                    "brew install node"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y nodejs npm"
+                ],
+                "fedora": [
+                    "sudo dnf install -y nodejs npm"
+                ],
+                "suse": [
+                    "sudo zypper install -y nodejs npm"
+                ]
+            }
+        },
+        {
+            "name": "MongoDB",
+            "version": "latest",
+            "description": "NoSQL Database",
+            "install_commands": {
+                "macos": [
+                    "brew tap mongodb/brew",
+                    "brew install mongodb-community@6.0"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y mongodb"
+                ],
+                "fedora": [
+                    "sudo dnf install -y mongodb-server"
+                ],
+                "suse": [
+                    "sudo zypper install -y mongodb"
+                ]
+            }
+        },
+        {
+            "name": "Redis",
+            "version": "latest",
+            "description": "In-memory Data Structure Store",
+            "install_commands": {
+                "macos": [
+                    "brew install redis"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y redis-server"
+                ],
+                "fedora": [
+                    "sudo dnf install -y redis"
+                ],
+                "suse": [
+                    "sudo zypper install -y redis"
+                ]
+            }
+        },
+        {
+            "name": "Angular",
+            "version": "latest",
+            "description": "Front-end Framework",
+            "install_commands": {
+                "macos": [
+                    "brew install node",
+                    "npm install -g @angular/cli"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y nodejs npm",
+                    "sudo npm install -g @angular/cli"
+                ],
+                "fedora": [
+                    "sudo dnf install -y nodejs npm",
+                    "sudo npm install -g @angular/cli"
+                ],
+                "suse": [
+                    "sudo zypper install -y nodejs npm",
+                    "sudo npm install -g @angular/cli"
+                ]
+            }
+        },
+        {
+            "name": "React",
+            "version": "latest",
+            "description": "JavaScript Library for Building User Interfaces",
+            "install_commands": {
+                "macos": [
+                    "brew install node",
+                    "npm install -g create-react-app"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y nodejs npm",
+                    "sudo npm install -g create-react-app"
+                ],
+                "fedora": [
+                    "sudo dnf install -y nodejs npm",
+                    "sudo npm install -g create-react-app"
+                ],
+                "suse": [
+                    "sudo zypper install -y nodejs npm",
+                    "sudo npm install -g create-react-app"
+                ]
+            }
+        },
+        {
+            "name": "Express",
+            "version": "latest",
+            "description": "Fast, unopinionated, minimalist web framework for Node.js",
+            "install_commands": {
+                "macos": [
+                    "brew install node",
+                    "npm install -g express-generator"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y nodejs npm",
+                    "sudo npm install -g express-generator"
+                ],
+                "fedora": [
+                    "sudo dnf install -y nodejs npm",
+                    "sudo npm install -g express-generator"
+                ],
+                "suse": [
+                    "sudo zypper install -y nodejs npm",
+                    "sudo npm install -g express-generator"
+                ]
+            }
+        },
+        {
+            "name": "Django",
+            "version": "latest",
+            "description": "High-level Python Web Framework",
+            "install_commands": {
+                "macos": [
+                    "brew install python",
+                    "pip3 install django"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y python3 python3-pip",
+                    "pip3 install django"
+                ],
+                "fedora": [
+                    "sudo dnf install -y python3 python3-pip",
+                    "pip3 install django"
+                ],
+                "suse": [
+                    "sudo zypper install -y python3 python3-pip",
+                    "pip3 install django"
+                ]
+            }
+        },
+        {
+            "name": "Gunicorn",
+            "version": "latest",
+            "description": "Python WSGI HTTP Server for UNIX",
+            "install_commands": {
+                "macos": [
+                    "brew install python",
+                    "pip3 install gunicorn"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y python3-pip",
+                    "pip3 install gunicorn"
+                ],
+                "fedora": [
+                    "sudo dnf install -y python3-pip",
+                    "pip3 install gunicorn"
+                ],
+                "suse": [
+                    "sudo zypper install -y python3-pip",
+                    "pip3 install gunicorn"
+                ]
+            }
         }
     ],
     "patterns": {
@@ -66,6 +287,35 @@
             "Apache",
             "MySQL",
             "PHP"
+        ],
+        "lemp": [
+            "Nginx",
+            "MySQL",
+            "PHP"
+        ],
+        "mean": [
+            "MongoDB",
+            "Express",
+            "Angular",
+            "Node.js"
+        ],
+        "mern": [
+            "MongoDB",
+            "Express",
+            "React",
+            "Node.js"
+        ],
+        "django": [
+            "PostgreSQL",
+            "Django",
+            "Gunicorn",
+            "Nginx"
+        ],
+        "stack-redis": [
+            "Node.js",
+            "Redis",
+            "Express",
+            "MongoDB"
         ]
     }
 }
