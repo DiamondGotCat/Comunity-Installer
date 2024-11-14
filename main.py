@@ -19,7 +19,7 @@ def fetch_index(url):
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        print(f"インデックスの取得に失敗しました: {e}")
+        print(f"Failed to fetch index: {e}")
         sys.exit(1)
 
 def detect_platform():
@@ -43,45 +43,45 @@ def detect_platform():
 
 def download_package(pkg):
     DOWNLOAD_DIR.mkdir(exist_ok=True)
-    # ダウンロードURLがない場合はスキップ
+    # Skip if there is no download URL
     if 'url' in pkg and pkg['url']:
         local_filename = DOWNLOAD_DIR / pkg['url'].split('/')[-1]
         if local_filename.exists():
-            print(f"{local_filename} は既に存在します。スキップします。")
+            print(f"{local_filename} already exists. Skipping.")
             return local_filename
-        print(f"{pkg['name']} をダウンロード中...")
+        print(f"Downloading {pkg['name']}...")
         try:
             with requests.get(pkg['url'], stream=True) as r:
                 r.raise_for_status()
                 with open(local_filename, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
-            print(f"ダウンロード完了: {local_filename}")
+            print(f"Download completed: {local_filename}")
             return local_filename
         except Exception as e:
-            print(f"ダウンロードに失敗しました: {e}")
+            print(f"Download failed: {e}")
             return None
     else:
-        # パッケージマネージャー経由でインストールする場合、ダウンロードは不要
+        # If installed via package manager, downloading is not necessary
         return None
 
 def execute_commands(commands, cwd=None):
     for cmd in commands:
-        print(f"実行中: {cmd}")
+        print(f"Executing: {cmd}")
         try:
             subprocess.run(cmd, shell=True, check=True, cwd=cwd)
         except subprocess.CalledProcessError as e:
-            print(f"コマンド '{cmd}' の実行に失敗しました: {e}")
+            print(f"Command '{cmd}' failed: {e}")
             sys.exit(1)
 
 def install_package(pkg, downloaded_file, platform_key):
-    print(f"{pkg['name']} のインストールを開始します。")
+    print(f"Starting installation of {pkg['name']}.")
     install_commands = pkg['install_commands'].get(platform_key, [])
     if not install_commands:
-        print(f"{platform_key} 向けのインストールコマンドが定義されていません。")
+        print(f"No installation commands defined for {platform_key}.")
         return
     execute_commands(install_commands, cwd=DOWNLOAD_DIR)
-    print(f"{pkg['name']} のインストールが完了しました。\n")
+    print(f"Installation of {pkg['name']} completed.\n")
 
 def load_state():
     if STATE_FILE.exists():
@@ -98,15 +98,15 @@ def save_state(state):
         json.dump(state, f, indent=4)
 
 def update_packages(index_packages, state, platform_key):
-    print("アップデートを確認しています...")
+    print("Checking for updates...")
     for pkg in index_packages:
         pkg_name = pkg['name']
         pkg_version = pkg['version']
         if pkg_name in state:
             installed_version = state[pkg_name]['version']
-            # "latest" のみを扱う場合、バージョン比較は不要
+            # Version comparison is unnecessary if handling only "latest"
             if pkg_version == "latest" and installed_version != "latest":
-                print(f"{pkg_name} の最新バージョンが利用可能です。アップデートします。")
+                print(f"Latest version of {pkg_name} available. Updating.")
                 downloaded_file = download_package(pkg)
                 if downloaded_file:
                     install_package(pkg, downloaded_file, platform_key)
@@ -115,7 +115,7 @@ def update_packages(index_packages, state, platform_key):
                         "installed_at": subprocess.getoutput("date")
                     }
             elif pkg_version != "latest" and installed_version != pkg_version:
-                print(f"{pkg_name} の新しいバージョン {pkg_version} が利用可能です。アップデートします。")
+                print(f"New version {pkg_version} of {pkg_name} available. Updating.")
                 downloaded_file = download_package(pkg)
                 if downloaded_file:
                     install_package(pkg, downloaded_file, platform_key)
@@ -124,17 +124,17 @@ def update_packages(index_packages, state, platform_key):
                         "installed_at": subprocess.getoutput("date")
                     }
         else:
-            # 新規インストールはアップデート対象外
+            # New installations are not part of the update process
             continue
     save_state(state)
-    print("アップデート処理が完了しました。\n")
+    print("Update process completed.\n")
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Comin (Community-Installer) - パッケージインストーラー")
+    parser = argparse.ArgumentParser(description="Comin (Community-Installer) - Package Installer")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-i', '--install', nargs='+', metavar='PACKAGE', help='インストールするパッケージ名を指定')
-    group.add_argument('-p', '--pattern', nargs='+', metavar='PATTERN', help='インストールするパターン名を指定')
-    group.add_argument('-u', '--update', action='store_true', help='インストール済みパッケージをアップデート')
+    group.add_argument('-i', '--install', nargs='+', metavar='PACKAGE', help='Specify the package name(s) to install')
+    group.add_argument('-p', '--pattern', nargs='+', metavar='PATTERN', help='Specify the pattern name(s) to install')
+    group.add_argument('-u', '--update', action='store_true', help='Update installed packages')
     return parser.parse_args()
 
 def main():
@@ -144,14 +144,14 @@ def main():
     packages = index.get('packages', [])
     patterns = index.get('patterns', {})
     if not packages:
-        print("インストール可能なパッケージが見つかりません。")
+        print("No packages available for installation.")
         sys.exit(1)
 
     platform_key = detect_platform()
     if platform_key == 'unknown':
-        print("サポートされていないプラットフォームです。")
+        print("Unsupported platform.")
         sys.exit(1)
-    print(f"検出されたプラットフォーム: {platform_key}\n")
+    print(f"Detected platform: {platform_key}\n")
 
     state = load_state()
 
@@ -163,9 +163,9 @@ def main():
                 if pkg not in selected_packages:
                     selected_packages.append(pkg)
             else:
-                print(f"指定されたパッケージ '{pkg_name}' は見つかりません。")
+                print(f"Specified package '{pkg_name}' not found.")
         if not selected_packages:
-            print("インストールするパッケージが選択されませんでした。")
+            print("No packages selected for installation.")
             sys.exit(0)
         for pkg in selected_packages:
             downloaded_file = download_package(pkg)
@@ -175,23 +175,23 @@ def main():
                 "installed_at": subprocess.getoutput("date")
             }
         save_state(state)
-        print("指定されたパッケージのインストールが完了しました。")
+        print("Specified package installation completed.")
 
     elif args.pattern:
         selected_packages = []
         for pattern_name in args.pattern:
             pkg_names = patterns.get(pattern_name.lower(), [])
             if not pkg_names:
-                print(f"指定されたパターン '{pattern_name}' は見つかりません。")
+                print(f"Specified pattern '{pattern_name}' not found.")
                 continue
             for pkg_name in pkg_names:
                 pkg = next((p for p in packages if p['name'].lower() == pkg_name.lower()), None)
                 if pkg and pkg not in selected_packages:
                     selected_packages.append(pkg)
                 elif not pkg:
-                    print(f"パターン '{pattern_name}' に含まれるパッケージ '{pkg_name}' が見つかりません。")
+                    print(f"Package '{pkg_name}' in pattern '{pattern_name}' not found.")
         if not selected_packages:
-            print("インストールするパッケージが選択されませんでした。")
+            print("No packages selected for installation.")
             sys.exit(0)
         for pkg in selected_packages:
             downloaded_file = download_package(pkg)
@@ -201,7 +201,7 @@ def main():
                 "installed_at": subprocess.getoutput("date")
             }
         save_state(state)
-        print("指定されたパターンのパッケージのインストールが完了しました。")
+        print("Specified pattern package installation completed.")
 
     elif args.update:
         update_packages(packages, state, platform_key)
