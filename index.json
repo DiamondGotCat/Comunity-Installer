@@ -122,7 +122,7 @@
         },
         {
             "name": "MongoDB",
-            "version": "latest",
+            "version": "6.0",
             "description": "NoSQL Database",
             "install_commands": {
                 "macos": [
@@ -130,15 +130,26 @@
                     "brew install mongodb-community@6.0"
                 ],
                 "debian": [
+                    "wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -",
+                    "echo \"deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/debian $(lsb_release -cs)/mongodb-org/6.0 main\" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list",
                     "sudo apt update",
-                    "sudo apt install -y mongodb"
+                    "sudo apt install -y mongodb-org"
                 ],
                 "fedora": [
-                    "sudo dnf install -y mongodb-server"
+                    "echo \"[mongodb-org-6.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/6.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc\" | sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo",
+                    "sudo dnf makecache",
+                    "sudo dnf install -y mongodb-org"
                 ],
                 "suse": [
-                    "sudo zypper install -y mongodb"
-                ]
+                    "sudo zypper addrepo --name \"MongoDB Repository\" https://repo.mongodb.org/zypper/suse/15/mongodb-org/6.0/x86_64/ mongodb-org-6.0",
+                    "sudo zypper refresh",
+                    "sudo zypper install -y mongodb-org"
+                }
             }
         },
         {
