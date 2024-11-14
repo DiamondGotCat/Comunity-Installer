@@ -8,18 +8,28 @@ import platform
 from pathlib import Path
 import distro
 import argparse
+from rich.console import Console
+from rich.progress import Progress, DownloadColumn, BarColumn, TextColumn, TimeRemainingColumn
+from rich.table import Table
+from rich.prompt import Prompt
+from rich.panel import Panel
 
 INDEX_URL = "https://raw.githubusercontent.com/DiamondGotCat/Comunity-Installer/refs/heads/dev/index.json"
 DOWNLOAD_DIR = Path("./downloads")
 STATE_FILE = Path("./comin_state.json")
 
+console = Console()
+
 def fetch_index(url):
     try:
+        console.log("[bold cyan]Fetching index...[/bold cyan]")
         response = requests.get(url)
         response.raise_for_status()
-        return response.json()
+        index = response.json()
+        console.log("[bold green]Index fetched successfully.[/bold green]")
+        return index
     except Exception as e:
-        print(f"Failed to fetch index: {e}")
+        console.print(f"[bold red]Failed to fetch index: {e}[/bold red]")
         sys.exit(1)
 
 def detect_platform():
@@ -43,23 +53,35 @@ def detect_platform():
 
 def download_package(pkg):
     DOWNLOAD_DIR.mkdir(exist_ok=True)
-    # Skip if there is no download URL
     if 'url' in pkg and pkg['url']:
         local_filename = DOWNLOAD_DIR / pkg['url'].split('/')[-1]
         if local_filename.exists():
-            print(f"{local_filename} already exists. Skipping.")
+            console.print(f"[yellow]{local_filename}[/yellow] already exists. Skipping download.")
             return local_filename
-        print(f"Downloading {pkg['name']}...")
+        console.print(f"[bold blue]Downloading {pkg['name']}...[/bold blue]")
         try:
             with requests.get(pkg['url'], stream=True) as r:
                 r.raise_for_status()
-                with open(local_filename, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            print(f"Download completed: {local_filename}")
+                total = int(r.headers.get('content-length', 0))
+                with Progress(
+                    "[progress.description]{task.description}",
+                    BarColumn(),
+                    DownloadColumn(),
+                    "[progress.percentage]{task.percentage:>3.1f}%",
+                    "•",
+                    TimeRemainingColumn(),
+                    console=console
+                ) as progress:
+                    task = progress.add_task("Downloading...", total=total)
+                    with open(local_filename, 'wb') as f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                                progress.update(task, advance=len(chunk))
+            console.print(f"[bold green]Download completed: {local_filename}[/bold green]")
             return local_filename
         except Exception as e:
-            print(f"Download failed: {e}")
+            console.print(f"[bold red]Download failed: {e}[/bold red]")
             return None
     else:
         # If installed via package manager, downloading is not necessary
@@ -67,28 +89,31 @@ def download_package(pkg):
 
 def execute_commands(commands, cwd=None):
     for cmd in commands:
-        print(f"Executing: {cmd}")
+        console.print(f"[bold magenta]Executing: {cmd}[/bold magenta]")
         try:
             subprocess.run(cmd, shell=True, check=True, cwd=cwd)
         except subprocess.CalledProcessError as e:
-            print(f"Command '{cmd}' failed: {e}")
+            console.print(f"[bold red]Command '{cmd}' failed: {e}[/bold red]")
             sys.exit(1)
 
 def install_package(pkg, downloaded_file, platform_key):
-    print(f"Starting installation of {pkg['name']}.")
+    console.print(f"[bold green]Starting installation of {pkg['name']}.[/bold green]")
     install_commands = pkg['install_commands'].get(platform_key, [])
     if not install_commands:
-        print(f"No installation commands defined for {platform_key}.")
+        console.print(f"[bold yellow]No installation commands defined for {platform_key}.[/bold yellow]")
         return
     execute_commands(install_commands, cwd=DOWNLOAD_DIR)
-    print(f"Installation of {pkg['name']} completed.\n")
+    console.print(f"[bold green]Installation of {pkg['name']} completed.\n[/bold green]")
 
 def load_state():
     if STATE_FILE.exists():
         try:
             with open(STATE_FILE, 'r') as f:
-                return json.load(f)
+                state = json.load(f)
+                console.log("[bold green]Loaded existing state.[/bold green]")
+                return state
         except Exception:
+            console.print("[bold yellow]Failed to load state file. Starting fresh.[/bold yellow]")
             return {}
     else:
         return {}
@@ -96,17 +121,18 @@ def load_state():
 def save_state(state):
     with open(STATE_FILE, 'w') as f:
         json.dump(state, f, indent=4)
+    console.log("[bold green]State saved.[/bold green]")
 
 def update_packages(index_packages, state, platform_key):
-    print("Checking for updates...")
+    console.print("[bold blue]Checking for updates...[/bold blue]")
+    updates_available = False
     for pkg in index_packages:
         pkg_name = pkg['name']
         pkg_version = pkg['version']
         if pkg_name in state:
             installed_version = state[pkg_name]['version']
-            # Version comparison is unnecessary if handling only "latest"
             if pkg_version == "latest" and installed_version != "latest":
-                print(f"Latest version of {pkg_name} available. Updating.")
+                console.print(f"[bold yellow]Latest version of {pkg_name} available. Updating.[/bold yellow]")
                 downloaded_file = download_package(pkg)
                 if downloaded_file:
                     install_package(pkg, downloaded_file, platform_key)
@@ -114,8 +140,9 @@ def update_packages(index_packages, state, platform_key):
                         "version": pkg_version,
                         "installed_at": subprocess.getoutput("date")
                     }
+                    updates_available = True
             elif pkg_version != "latest" and installed_version != pkg_version:
-                print(f"New version {pkg_version} of {pkg_name} available. Updating.")
+                console.print(f"[bold yellow]New version {pkg_version} of {pkg_name} available. Updating.[/bold yellow]")
                 downloaded_file = download_package(pkg)
                 if downloaded_file:
                     install_package(pkg, downloaded_file, platform_key)
@@ -123,11 +150,12 @@ def update_packages(index_packages, state, platform_key):
                         "version": pkg_version,
                         "installed_at": subprocess.getoutput("date")
                     }
-        else:
-            # New installations are not part of the update process
-            continue
-    save_state(state)
-    print("Update process completed.\n")
+                    updates_available = True
+    if updates_available:
+        save_state(state)
+        console.print("[bold green]Update process completed.[/bold green]\n")
+    else:
+        console.print("[bold green]All packages are up to date.[/bold green]\n")
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Comin (Community-Installer) - Package Installer")
@@ -137,6 +165,23 @@ def parse_arguments():
     group.add_argument('-u', '--update', action='store_true', help='Update installed packages')
     return parser.parse_args()
 
+def display_packages(packages):
+    table = Table(title="Available Packages", show_header=True, header_style="bold magenta")
+    table.add_column("Name", style="cyan", no_wrap=True)
+    table.add_column("Version", style="green")
+    table.add_column("Description", style="white")
+    for pkg in packages:
+        table.add_row(pkg['name'], pkg['version'], pkg.get('description', 'No description'))
+    console.print(table)
+
+def display_patterns(patterns):
+    table = Table(title="Available Patterns", show_header=True, header_style="bold magenta")
+    table.add_column("Pattern Name", style="cyan", no_wrap=True)
+    table.add_column("Packages Included", style="green")
+    for pattern, pkgs in patterns.items():
+        table.add_row(pattern, ", ".join(pkgs))
+    console.print(table)
+
 def main():
     args = parse_arguments()
 
@@ -144,14 +189,14 @@ def main():
     packages = index.get('packages', [])
     patterns = index.get('patterns', {})
     if not packages:
-        print("No packages available for installation.")
+        console.print("[bold red]No packages available for installation.[/bold red]")
         sys.exit(1)
 
     platform_key = detect_platform()
     if platform_key == 'unknown':
-        print("Unsupported platform.")
+        console.print("[bold red]Unsupported platform.[/bold red]")
         sys.exit(1)
-    print(f"Detected platform: {platform_key}\n")
+    console.print(f"[bold green]Detected platform: {platform_key}[/bold green]\n")
 
     state = load_state()
 
@@ -163,10 +208,13 @@ def main():
                 if pkg not in selected_packages:
                     selected_packages.append(pkg)
             else:
-                print(f"Specified package '{pkg_name}' not found.")
+                console.print(f"[bold red]Specified package '{pkg_name}' not found.[/bold red]")
         if not selected_packages:
-            print("No packages selected for installation.")
+            console.print("[bold yellow]No packages selected for installation.[/bold yellow]")
             sys.exit(0)
+        
+        display_packages(selected_packages)
+
         for pkg in selected_packages:
             downloaded_file = download_package(pkg)
             install_package(pkg, downloaded_file, platform_key)
@@ -175,24 +223,27 @@ def main():
                 "installed_at": subprocess.getoutput("date")
             }
         save_state(state)
-        print("Specified package installation completed.")
+        console.print("[bold green]Specified package installation completed.[/bold green]")
 
     elif args.pattern:
         selected_packages = []
         for pattern_name in args.pattern:
             pkg_names = patterns.get(pattern_name.lower(), [])
             if not pkg_names:
-                print(f"Specified pattern '{pattern_name}' not found.")
+                console.print(f"[bold red]Specified pattern '{pattern_name}' not found.[/bold red]")
                 continue
             for pkg_name in pkg_names:
                 pkg = next((p for p in packages if p['name'].lower() == pkg_name.lower()), None)
                 if pkg and pkg not in selected_packages:
                     selected_packages.append(pkg)
                 elif not pkg:
-                    print(f"Package '{pkg_name}' in pattern '{pattern_name}' not found.")
+                    console.print(f"[bold red]Package '{pkg_name}' in pattern '{pattern_name}' not found.[/bold red]")
         if not selected_packages:
-            print("No packages selected for installation.")
+            console.print("[bold yellow]No packages selected for installation.[/bold yellow]")
             sys.exit(0)
+        
+        display_packages(selected_packages)
+
         for pkg in selected_packages:
             downloaded_file = download_package(pkg)
             install_package(pkg, downloaded_file, platform_key)
@@ -201,7 +252,7 @@ def main():
                 "installed_at": subprocess.getoutput("date")
             }
         save_state(state)
-        print("Specified pattern package installation completed.")
+        console.print("[bold green]Specified pattern package installation completed.[/bold green]")
 
     elif args.update:
         update_packages(packages, state, platform_key)
