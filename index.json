@@ -144,7 +144,7 @@
                     "sudo zypper addrepo --name \"MongoDB Repository\" https://repo.mongodb.org/zypper/suse/15/mongodb-org/6.0/x86_64/ mongodb-org-6.0",
                     "sudo zypper refresh",
                     "sudo zypper install -y mongodb-org"
-                }
+                ]
             }
         },
         {
