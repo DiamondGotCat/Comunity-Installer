@@ -6,8 +6,9 @@ import subprocess
 import platform
 from pathlib import Path
 import shutil
+import distro  # 追加: distroモジュールをインポート
 
-INDEX_URL = "https://github.com/DiamondGotCat/Comunity-Installer/raw/refs/heads/dev/index.json"
+INDEX_URL = "https://raw.githubusercontent.com/DiamondGotCat/Comunity-Installer/refs/heads/dev/index.json"
 DOWNLOAD_DIR = Path("./downloads")
 STATE_FILE = Path("./comin_state.json")
 
@@ -25,12 +26,12 @@ def detect_platform():
     if system == 'darwin':
         return 'macos'
     elif system == 'linux':
-        distro = platform.linux_distribution()[0].lower()
-        if 'debian' in distro or 'ubuntu' in distro:
+        distro_name = distro.id().lower()
+        if distro_name in ['debian', 'ubuntu', 'linuxmint']:
             return 'debian'
-        elif 'fedora' in distro:
+        elif distro_name in ['fedora', 'centos', 'rhel']:
             return 'fedora'
-        elif 'suse' in distro or 'opensuse' in distro:
+        elif distro_name in ['suse', 'opensuse']:
             return 'suse'
         else:
             return 'unknown'
@@ -58,6 +59,7 @@ def get_user_selection(num_packages, num_patterns):
     print("2. パターンを選択")
     choice = input("どの方法でインストールしますか？ (1/2): ").strip()
     selected_packages = []
+    selected_patterns = []
     if choice == '1':
         selections = input("インストールしたいパッケージの番号をカンマ区切りで入力してください (例: 1,3): ")
         try:
@@ -67,7 +69,7 @@ def get_user_selection(num_packages, num_patterns):
                     selected_packages.append(idx - 1)
                 else:
                     print(f"無効な番号: {idx}")
-            return selected_packages, []
+            return selected_packages, selected_patterns
         except ValueError:
             print("入力が無効です。数字をカンマで区切って入力してください。")
             sys.exit(1)
@@ -77,10 +79,10 @@ def get_user_selection(num_packages, num_patterns):
             for part in pattern_selections.split(','):
                 idx = int(part.strip())
                 if 1 <= idx <= num_patterns:
-                    selected_packages.append(idx - 1)
+                    selected_patterns.append(idx - 1)
                 else:
                     print(f"無効な番号: {idx}")
-            return [], selected_packages
+            return selected_packages, selected_patterns
         except ValueError:
             print("入力が無効です。数字をカンマで区切って入力してください。")
             sys.exit(1)
@@ -146,7 +148,17 @@ def update_packages(index_packages, state, platform_key):
         pkg_version = pkg['version']
         if pkg_name in state:
             installed_version = state[pkg_name]['version']
-            if installed_version < pkg_version:
+            # "latest" のみを扱う場合、バージョン比較は不要
+            if pkg_version == "latest" and installed_version != "latest":
+                print(f"{pkg_name} の最新バージョンが利用可能です。アップデートします。")
+                downloaded_file = download_package(pkg)
+                if downloaded_file:
+                    install_package(pkg, downloaded_file, platform_key)
+                    state[pkg_name] = {
+                        "version": pkg_version,
+                        "installed_at": subprocess.getoutput("date")
+                    }
+            elif installed_version != pkg_version and pkg_version != "latest":
                 print(f"{pkg_name} の新しいバージョン {pkg_version} が利用可能です。アップデートします。")
                 downloaded_file = download_package(pkg)
                 if downloaded_file:
@@ -156,7 +168,7 @@ def update_packages(index_packages, state, platform_key):
                         "installed_at": subprocess.getoutput("date")
                     }
         else:
-            # 新規インストール
+            # 新規インストールはアップデート対象外
             continue
     save_state(state)
     print("アップデート処理が完了しました。\n")
