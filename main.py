@@ -31,7 +31,9 @@ def detect_platform():
             return 'debian'
         elif distro_name in ['fedora', 'centos', 'rhel']:
             return 'fedora'
-        elif distro_name in ['suse', 'opensuse']:
+        elif distro_name.startswith('opensuse'):
+            return 'suse'
+        elif distro_name in ['suse', 'sles']:
             return 'suse'
         else:
             return 'unknown'
@@ -163,7 +165,7 @@ def update_packages(index_packages, state, platform_key):
                         "version": pkg_version,
                         "installed_at": subprocess.getoutput("date")
                     }
-            elif installed_version != pkg_version and pkg_version != "latest":
+            elif pkg_version != "latest" and installed_version != pkg_version:
                 print(f"{pkg_name} の新しいバージョン {pkg_version} が利用可能です。アップデートします。")
                 downloaded_file = download_package(pkg)
                 if downloaded_file:
