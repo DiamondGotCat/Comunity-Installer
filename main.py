@@ -92,21 +92,26 @@ def get_user_selection(num_packages, num_patterns):
 
 def download_package(pkg):
     DOWNLOAD_DIR.mkdir(exist_ok=True)
-    local_filename = DOWNLOAD_DIR / pkg['url'].split('/')[-1]
-    if local_filename.exists():
-        print(f"{local_filename} は既に存在します。スキップします。")
-        return local_filename
-    print(f"{pkg['name']} をダウンロード中...")
-    try:
-        with requests.get(pkg['url'], stream=True) as r:
-            r.raise_for_status()
-            with open(local_filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        print(f"ダウンロード完了: {local_filename}")
-        return local_filename
-    except Exception as e:
-        print(f"ダウンロードに失敗しました: {e}")
+    # ダウンロードURLがない場合はスキップ
+    if 'url' in pkg and pkg['url']:
+        local_filename = DOWNLOAD_DIR / pkg['url'].split('/')[-1]
+        if local_filename.exists():
+            print(f"{local_filename} は既に存在します。スキップします。")
+            return local_filename
+        print(f"{pkg['name']} をダウンロード中...")
+        try:
+            with requests.get(pkg['url'], stream=True) as r:
+                r.raise_for_status()
+                with open(local_filename, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            print(f"ダウンロード完了: {local_filename}")
+            return local_filename
+        except Exception as e:
+            print(f"ダウンロードに失敗しました: {e}")
+            return None
+    else:
+        # パッケージマネージャー経由でインストールする場合、ダウンロードは不要
         return None
 
 def execute_commands(commands, cwd=None):
@@ -221,8 +226,15 @@ def main():
         
         for pkg in selected_packages:
             downloaded_file = download_package(pkg)
-            if downloaded_file:
+            if downloaded_file is not None:
                 install_package(pkg, downloaded_file, platform_key)
+                state[pkg['name']] = {
+                    "version": pkg['version'],
+                    "installed_at": subprocess.getoutput("date")
+                }
+            else:
+                # ダウンロード不要なパッケージ（パッケージマネージャー経由でインストール）
+                install_package(pkg, None, platform_key)
                 state[pkg['name']] = {
                     "version": pkg['version'],
                     "installed_at": subprocess.getoutput("date")
