@@ -1,0 +1,71 @@
+{
+    "packages": [
+        {
+            "name": "Apache",
+            "version": "latest",
+            "description": "Web Server - Apache (Httpd)",
+            "install_commands": {
+                "macos": [
+                    "brew install httpd"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y apache2"
+                ],
+                "fedora": [
+                    "sudo dnf install -y httpd"
+                ],
+                "suse": [
+                    "sudo zypper install -y apache2"
+                ]
+            }
+        },
+        {
+            "name": "MySQL",
+            "version": "latest",
+            "description": "Database Software",
+            "install_commands": {
+                "macos": [
+                    "brew install mysql"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y mysql-server"
+                ],
+                "fedora": [
+                    "sudo dnf install -y mysql-server"
+                ],
+                "suse": [
+                    "sudo zypper install -y mysql"
+                ]
+            }
+        },
+        {
+            "name": "PHP",
+            "version": "latest",
+            "description": "PHP Scripting Language",
+            "install_commands": {
+                "macos": [
+                    "brew install php"
+                ],
+                "debian": [
+                    "sudo apt update",
+                    "sudo apt install -y php libapache2-mod-php"
+                ],
+                "fedora": [
+                    "sudo dnf install -y php php-mysqlnd"
+                ],
+                "suse": [
+                    "sudo zypper install -y php php-mysql"
+                ]
+            }
+        }
+    ],
+    "patterns": {
+        "lamp": [
+            "Apache",
+            "MySQL",
+            "PHP"
+        ]
+    }
+}
