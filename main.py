@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import sys
 import json
@@ -5,7 +6,6 @@ import requests
 import subprocess
 import platform
 from pathlib import Path
-import shutil
 import distro
 import argparse
 
