@@ -136,7 +136,7 @@
                     "sudo apt install -y mongodb-org"
                 ],
                 "fedora": [
-                    "sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo <<EOF\n[mongodb-org-6.0]\nname=MongoDB Repository\nbaseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/6.0/x86_64/\ngpgcheck=1\nenabled=1\ngpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc\nEOF",
+                    "sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo <<EOF\\n[mongodb-org-6.0]\\nname=MongoDB Repository\\nbaseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/6.0/x86_64/\\ngpgcheck=1\\nenabled=1\\ngpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc\\nEOF",
                     "sudo dnf makecache",
                     "sudo dnf install -y mongodb-org"
                 ],
