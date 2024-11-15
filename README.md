@@ -1,2 +1,2 @@
 # Comunity-Installer
-Comin (Community-Installer) is a Installer, but Everyone Request the New/Update Software Index.
+Comin (Community-Installer) is a Installer, but Everyone can Request the New/Update Software Index.
